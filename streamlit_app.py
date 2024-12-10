@@ -32,9 +32,9 @@ if "selected_model" not in st.session_state:
 # Define model details
 models = {
     "gemma2-9b-it": {"name": "gemma2-9b-it", "tokens": 8192, "developer": "Google"},
-    "llama-3.1-70b-versatile": {"name": "llama-3.1-70b-versatile", "tokens": 7800, "developer": "Meta"},
-    "llama-3.1-8b-instant": {"name": "llama-3.1-8b-instant", "tokens": 7800, "developer": "Meta"},
-    "llama2-70b-4096": {"name": "LLaMA2-70b-chat", "tokens": 4096, "developer": "Meta"},
+    "llama-3.3-70b-versatile": {"name": "llama-3.3-70b-versatile", "tokens": 8192, "developer": "Meta"},
+    "llama-3.3-70b-specdec": {"name": "llama-3.3-70b-specdec", "tokens": 8192, "developer": "Meta"},
+    "llama-3.1-8b-instant": {"name": "llama-3.1-8b-instant", "tokens": 8192, "developer": "Meta"},
     "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
 }
 
