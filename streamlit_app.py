@@ -13,6 +13,22 @@ st.set_page_config(
 # Custom CSS for Material Design styling (main area only)
 st.markdown("""
 <style>
+    /* Base text colors */
+    .main, .sidebar {
+        color: #111827;
+    }
+    
+    /* Markdown text colors */
+    .element-container, .stMarkdown {
+        color: #111827 !important;
+    }
+    
+    /* Code block colors */
+    .markdown-text-container code {
+        color: #111827 !important;
+        background-color: #f3f4f6 !important;
+    }
+    
     /* Material Design-inspired styles for main area only */
     .main .stTextInput > div > div > input,
     .main .stTextArea > div > div > textarea {
@@ -22,6 +38,7 @@ st.markdown("""
         padding: 0.75rem;
         font-size: 1rem;
         transition: all 0.2s;
+        color: #111827;
     }
     
     .main .stTextInput > div > div > input:focus,
@@ -51,6 +68,7 @@ st.markdown("""
         padding: 1rem;
         margin: 0.5rem 0;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        color: #111827;
     }
     
     /* Card-like containers for main area */
@@ -120,6 +138,7 @@ st.markdown("""
         border: 1px solid #e5e7eb;
         background-color: #ffffff;
         border-radius: 4px;
+        color: #111827;
     }
 
     /* Simple button style for sidebar */
@@ -136,6 +155,12 @@ st.markdown("""
 
     .sidebar .stButton > button:hover {
         background-color: #e5e7eb;
+    }
+
+    /* Ensure text visibility in all containers */
+    div[data-testid="stText"],
+    div[data-testid="stMarkdown"] {
+        color: #111827 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -169,7 +194,7 @@ models = {
 
 # Sidebar for settings
 with st.sidebar:
-    st.markdown("### Model Settings")
+    st.markdown('<p style="color: #111827; font-size: 1.25rem; font-weight: 600;">Model Settings</p>', unsafe_allow_html=True)
 
     model_option = st.selectbox(
         "Model",
@@ -209,14 +234,14 @@ with st.sidebar:
     st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
     
     # Display current system prompt preview
-    st.markdown("#### Current System Prompt")
-    st.markdown(f"```\n{st.session_state.system_prompt}\n```")
+    st.markdown('<p style="color: #111827; font-size: 1rem; font-weight: 600;">Current System Prompt</p>', unsafe_allow_html=True)
+    st.code(st.session_state.system_prompt, language=None)
 
 # System Prompt Editor Dialog
 if st.session_state.show_prompt_editor:
     dialog = st.container()
     with dialog:
-        st.markdown("### Edit System Prompt")
+        st.markdown('<p style="color: #111827; font-size: 1.25rem; font-weight: 600;">Edit System Prompt</p>', unsafe_allow_html=True)
         
         new_system_prompt = st.text_area(
             "System Prompt",
