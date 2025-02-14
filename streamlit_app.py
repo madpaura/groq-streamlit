@@ -7,7 +7,7 @@ st.set_page_config(
     page_icon="💬",
     layout="wide",
     page_title="Groq Chat",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Custom CSS for Material Design styling
@@ -101,24 +101,22 @@ st.markdown("""
         background: linear-gradient(to right, #6366f1, #8b5cf6);
         margin: 1rem 0;
     }
+
+    /* Modal styling */
+    .stModal {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #f8fafc;
+        padding: 2rem 1rem;
+    }
+
+    .sidebar .stButton > button {
+        width: 100%;
+    }
 </style>
-""", unsafe_allow_html=True)
-
-
-def icon(emoji: str):
-    """Shows an emoji as a Notion-style page icon."""
-    st.write(
-        f'<span style="font-size: 78px; line-height: 1; margin-bottom: 0.5rem; display: inline-block">{emoji}</span>',
-        unsafe_allow_html=True,
-    )
-
-
-icon("🏎️")
-
-st.markdown("""
-<h1 style='font-size: 2.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;'>
-    Groq Chat
-</h1>
 """, unsafe_allow_html=True)
 
 client = Groq(
@@ -135,6 +133,9 @@ if "selected_model" not in st.session_state:
 if "system_prompt" not in st.session_state:
     st.session_state.system_prompt = "You are a helpful AI assistant."
 
+if "show_prompt_editor" not in st.session_state:
+    st.session_state.show_prompt_editor = False
+
 # Define model details
 models = {
     "deepseek-r1-distill-llama-70b": {"name": "deepseek-r1-distill-llama-70b", "tokens": 32768, "developer": "deepseek"},
@@ -145,23 +146,20 @@ models = {
     "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
 }
 
-# Create a container for settings
-with st.container():
+# Sidebar for settings
+with st.sidebar:
     st.markdown("""
     <h3 style='font-size: 1.25rem; font-weight: 500; color: #4b5563; margin-bottom: 1rem;'>
         Model Settings
     </h3>
     """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        model_option = st.selectbox(
-            "Model",
-            options=list(models.keys()),
-            format_func=lambda x: f"{models[x]['name']} ({models[x]['developer']})",
-            index=0
-        )
+
+    model_option = st.selectbox(
+        "Model",
+        options=list(models.keys()),
+        format_func=lambda x: f"{models[x]['name']} ({models[x]['developer']})",
+        index=0
+    )
 
     # Detect model change and clear chat history if model has changed
     if st.session_state.selected_model != model_option:
@@ -170,47 +168,72 @@ with st.container():
 
     max_tokens_range = models[model_option]["tokens"]
 
-    with col2:
-        max_tokens = st.slider(
-            "Maximum Tokens",
-            min_value=512,
-            max_value=max_tokens_range,
-            value=min(32768, max_tokens_range),
-            step=512,
-            help=f"Maximum tokens for response. Current model limit: {max_tokens_range}"
-        )
+    max_tokens = st.slider(
+        "Maximum Tokens",
+        min_value=512,
+        max_value=max_tokens_range,
+        value=min(32768, max_tokens_range),
+        step=512,
+        help=f"Maximum tokens for response. Current model limit: {max_tokens_range}"
+    )
 
-    # Add temperature and system prompt configuration
-    col3, col4 = st.columns(2)
+    temperature = st.slider(
+        "Temperature",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.7,
+        step=0.1,
+        help="Controls response creativity. Lower values are more focused."
+    )
 
-    with col3:
-        temperature = st.slider(
-            "Temperature",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.7,
-            step=0.1,
-            help="Controls response creativity. Lower values are more focused."
-        )
+    if st.button("Edit System Prompt", type="primary"):
+        st.session_state.show_prompt_editor = True
 
-    with col4:
-        system_prompt = st.text_area(
+    st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
+    
+    # Display current system prompt preview
+    st.markdown("""
+    <h4 style='font-size: 1rem; font-weight: 500; color: #4b5563; margin-bottom: 0.5rem;'>
+        Current System Prompt
+    </h4>
+    """, unsafe_allow_html=True)
+    st.markdown(f"```\n{st.session_state.system_prompt}\n```")
+
+# System Prompt Editor Modal
+if st.session_state.show_prompt_editor:
+    with st.modal("System Prompt Editor", key="prompt_editor"):
+        st.markdown("""
+        <h3 style='font-size: 1.25rem; font-weight: 500; color: #4b5563; margin-bottom: 1rem;'>
+            Edit System Prompt
+        </h3>
+        """, unsafe_allow_html=True)
+        
+        new_system_prompt = st.text_area(
             "System Prompt",
             value=st.session_state.system_prompt,
-            help="Define the AI assistant's behavior and role",
-            height=100
+            height=200,
+            help="Define the AI assistant's behavior and role"
         )
-        if system_prompt != st.session_state.system_prompt:
-            st.session_state.system_prompt = system_prompt
-            st.session_state.messages = []
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Cancel"):
+                st.session_state.show_prompt_editor = False
+                st.rerun()
+        
+        with col2:
+            if st.button("Save", type="primary"):
+                if new_system_prompt != st.session_state.system_prompt:
+                    st.session_state.system_prompt = new_system_prompt
+                    st.session_state.messages = []
+                st.session_state.show_prompt_editor = False
+                st.rerun()
 
-st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
-
-# Chat interface
+# Main chat interface
 st.markdown("""
-<h3 style='font-size: 1.25rem; font-weight: 500; color: #4b5563; margin-bottom: 1rem;'>
-    Chat
-</h3>
+<h1 style='font-size: 2.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;'>
+    Groq Chat
+</h1>
 """, unsafe_allow_html=True)
 
 # Display chat messages
