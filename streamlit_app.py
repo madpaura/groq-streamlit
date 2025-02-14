@@ -10,12 +10,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Material Design styling
+# Custom CSS for Material Design styling (main area only)
 st.markdown("""
 <style>
-    /* Material Design-inspired styles */
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea {
+    /* Material Design-inspired styles for main area only */
+    .main .stTextInput > div > div > input,
+    .main .stTextArea > div > div > textarea {
         background-color: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
@@ -24,13 +24,13 @@ st.markdown("""
         transition: all 0.2s;
     }
     
-    .stTextInput > div > div > input:focus,
-    .stTextArea > div > div > textarea:focus {
+    .main .stTextInput > div > div > input:focus,
+    .main .stTextArea > div > div > textarea:focus {
         border-color: #6366f1;
         box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
     }
     
-    .stButton > button {
+    .main .stButton > button {
         background-color: #6366f1;
         color: white;
         border-radius: 8px;
@@ -39,24 +39,9 @@ st.markdown("""
         transition: all 0.2s;
     }
     
-    .stButton > button:hover {
+    .main .stButton > button:hover {
         background-color: #4f46e5;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stSlider > div > div {
-        background-color: #e2e8f0;
-    }
-    
-    .stSlider > div > div > div {
-        background-color: #6366f1;
-    }
-    
-    .stSelectbox > div > div {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0.5rem;
     }
     
     /* Chat message styling */
@@ -68,8 +53,8 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
-    /* Card-like containers */
-    .css-12oz5g7 {
+    /* Card-like containers for main area */
+    .main .css-12oz5g7 {
         padding: 1.5rem;
         border-radius: 12px;
         background-color: #ffffff;
@@ -83,14 +68,14 @@ st.markdown("""
         max-width: 1200px;
     }
     
-    /* Material Design typography */
-    h1, h2, h3 {
+    /* Material Design typography for main area */
+    .main h1, .main h2, .main h3 {
         font-family: 'Roboto', sans-serif;
         font-weight: 500;
         color: #1f2937;
     }
     
-    p, label {
+    .main p, .main label {
         font-family: 'Roboto', sans-serif;
         color: #4b5563;
     }
@@ -98,7 +83,7 @@ st.markdown("""
     /* Custom divider */
     .custom-divider {
         height: 1px;
-        background: linear-gradient(to right, #6366f1, #8b5cf6);
+        background: #e5e7eb;
         margin: 1rem 0;
     }
 
@@ -107,14 +92,50 @@ st.markdown("""
         background-color: rgba(0, 0, 0, 0.5);
     }
 
-    /* Sidebar styling */
+    /* Sidebar styling - keeping it simple */
     .css-1d391kg {
-        background-color: #f8fafc;
-        padding: 2rem 1rem;
+        background-color: #ffffff;
+        padding: 1rem;
     }
 
+    /* Sidebar headings */
+    .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4 {
+        color: #111827;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Sidebar text */
+    .sidebar p, .sidebar label {
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    /* Remove Material Design from sidebar components */
+    .sidebar .stSelectbox > div > div,
+    .sidebar .stSlider > div > div,
+    .sidebar .stTextInput > div > div > input,
+    .sidebar .stTextArea > div > div > textarea {
+        border: 1px solid #e5e7eb;
+        background-color: #ffffff;
+        border-radius: 4px;
+    }
+
+    /* Simple button style for sidebar */
     .sidebar .stButton > button {
         width: 100%;
+        background-color: #f3f4f6;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .sidebar .stButton > button:hover {
+        background-color: #e5e7eb;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -148,11 +169,7 @@ models = {
 
 # Sidebar for settings
 with st.sidebar:
-    st.markdown("""
-    <h3 style='font-size: 1.25rem; font-weight: 500; color: #4b5563; margin-bottom: 1rem;'>
-        Model Settings
-    </h3>
-    """, unsafe_allow_html=True)
+    st.markdown("### Model Settings")
 
     model_option = st.selectbox(
         "Model",
@@ -186,27 +203,19 @@ with st.sidebar:
         help="Controls response creativity. Lower values are more focused."
     )
 
-    if st.button("Edit System Prompt", type="primary"):
+    if st.button("Edit System Prompt"):
         st.session_state.show_prompt_editor = True
 
     st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
     
     # Display current system prompt preview
-    st.markdown("""
-    <h4 style='font-size: 1rem; font-weight: 500; color: #4b5563; margin-bottom: 0.5rem;'>
-        Current System Prompt
-    </h4>
-    """, unsafe_allow_html=True)
+    st.markdown("#### Current System Prompt")
     st.markdown(f"```\n{st.session_state.system_prompt}\n```")
 
 # System Prompt Editor Modal
 if st.session_state.show_prompt_editor:
     with st.modal("System Prompt Editor", key="prompt_editor"):
-        st.markdown("""
-        <h3 style='font-size: 1.25rem; font-weight: 500; color: #4b5563; margin-bottom: 1rem;'>
-            Edit System Prompt
-        </h3>
-        """, unsafe_allow_html=True)
+        st.markdown("### Edit System Prompt")
         
         new_system_prompt = st.text_area(
             "System Prompt",
