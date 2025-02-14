@@ -2,6 +2,14 @@ import streamlit as st
 from typing import Generator
 from groq import Groq
 
+# Must be the first Streamlit command
+st.set_page_config(
+    page_icon="💬",
+    layout="wide",
+    page_title="Groq Chat",
+    initial_sidebar_state="collapsed"
+)
+
 # Custom CSS for Material Design styling
 st.markdown("""
 <style>
@@ -95,13 +103,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-st.set_page_config(
-    page_icon="💬",
-    layout="wide",
-    page_title="Groq Chat",
-    initial_sidebar_state="collapsed"
-)
 
 
 def icon(emoji: str):
