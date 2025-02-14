@@ -87,8 +87,8 @@ st.markdown("""
         margin: 1rem 0;
     }
 
-    /* Modal styling */
-    .stModal {
+    /* Dialog styling */
+    .stDialog {
         background-color: rgba(0, 0, 0, 0.5);
     }
 
@@ -212,9 +212,10 @@ with st.sidebar:
     st.markdown("#### Current System Prompt")
     st.markdown(f"```\n{st.session_state.system_prompt}\n```")
 
-# System Prompt Editor Modal
+# System Prompt Editor Dialog
 if st.session_state.show_prompt_editor:
-    with st.modal("System Prompt Editor", key="prompt_editor"):
+    dialog = st.container()
+    with dialog:
         st.markdown("### Edit System Prompt")
         
         new_system_prompt = st.text_area(
