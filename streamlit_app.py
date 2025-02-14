@@ -1,6 +1,7 @@
 import streamlit as st
 from typing import Generator
 from groq import Groq
+import re
 
 # Must be the first Streamlit command
 st.set_page_config(
@@ -10,7 +11,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Material Design styling (main area only)
+# JavaScript for handling folding functionality
+st.markdown("""
+<script>
+function toggleThinking(id) {
+    const content = document.getElementById('thinking-content-' + id);
+    const arrow = document.getElementById('arrow-' + id);
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.innerHTML = '▼';
+    } else {
+        content.style.display = 'none';
+        arrow.innerHTML = '▶';
+    }
+}
+</script>
+""", unsafe_allow_html=True)
+
+# Custom CSS including thinking section styling
 st.markdown("""
 <style>
     /* Base text colors */
@@ -27,6 +45,41 @@ st.markdown("""
     .markdown-text-container code {
         color: #111827 !important;
         background-color: #f3f4f6 !important;
+    }
+
+    /* Thinking section styling */
+    .thinking-section {
+        background-color: #1a1a1a;
+        border-radius: 8px;
+        margin: 10px 0;
+        padding: 1px 15px;
+        border-left: 4px solid #4f46e5;
+    }
+
+    .thinking-header {
+        color: #e5e7eb;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .thinking-arrow {
+        color: #6366f1;
+        font-size: 0.8rem;
+        transition: transform 0.2s;
+    }
+
+    .thinking-content {
+        color: #d1d5db;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        padding: 10px 0;
+        border-top: 1px solid #374151;
+        margin-top: 8px;
     }
     
     /* Material Design-inspired styles for main area only */
@@ -165,6 +218,29 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def format_thinking_content(content: str) -> str:
+    """Format content with thinking tags into collapsible sections."""
+    thinking_pattern = r'<thinking>(.*?)</thinking>'
+    thinking_count = 0
+    
+    def replace_thinking(match):
+        nonlocal thinking_count
+        thinking_count += 1
+        thinking_content = match.group(1).strip()
+        return f'''
+        <div class="thinking-section">
+            <div class="thinking-header" onclick="toggleThinking({thinking_count})">
+                <span id="arrow-{thinking_count}" class="thinking-arrow">▼</span>
+                <span>Thinking Process</span>
+            </div>
+            <div id="thinking-content-{thinking_count}" class="thinking-content">
+                {thinking_content}
+            </div>
+        </div>
+        '''
+    
+    return re.sub(thinking_pattern, replace_thinking, content, flags=re.DOTALL)
+
 client = Groq(
     api_key=st.secrets["GROQ_API_KEY"],
 )
@@ -275,7 +351,9 @@ st.markdown("""
 for message in st.session_state.messages:
     avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
     with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"])
+        # Format thinking tags if present
+        formatted_content = format_thinking_content(message["content"])
+        st.markdown(formatted_content, unsafe_allow_html=True)
 
 
 def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
