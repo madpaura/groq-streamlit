@@ -29,6 +29,9 @@ if "messages" not in st.session_state:
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = None
 
+if "system_prompt" not in st.session_state:
+    st.session_state.system_prompt = "You are a helpful AI assistant."
+
 # Define model details
 models = {
     "deepseek-r1-distill-llama-70b": {"name": "deepseek-r1-distill-llama-70b", "tokens": 32768, "developer": "deepseek"},
@@ -39,7 +42,7 @@ models = {
     "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
 }
 
-# Layout for model selection and max_tokens slider
+# Layout for model selection and settings
 col1, col2 = st.columns(2)
 
 with col1:
@@ -69,6 +72,31 @@ with col2:
         help=f"Adjust the maximum number of tokens (words) for the model's response. Max for selected model: {max_tokens_range}"
     )
 
+# Add temperature and system prompt configuration
+col3, col4 = st.columns(2)
+
+with col3:
+    temperature = st.slider(
+        "Temperature:",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.7,
+        step=0.1,
+        help="Controls randomness in the response. Lower values make the output more focused and deterministic."
+    )
+
+with col4:
+    system_prompt = st.text_area(
+        "System Prompt:",
+        value=st.session_state.system_prompt,
+        help="Define the AI assistant's behavior and role.",
+        height=100
+    )
+    # Update session state if system prompt changes
+    if system_prompt != st.session_state.system_prompt:
+        st.session_state.system_prompt = system_prompt
+        st.session_state.messages = []  # Clear chat history when system prompt changes
+
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
@@ -91,16 +119,22 @@ if prompt := st.chat_input("Enter your prompt here..."):
 
     # Fetch response from Groq API
     try:
+        # Include system message in the conversation
+        messages = [
+            {"role": "system", "content": st.session_state.system_prompt}
+        ] + [
+            {
+                "role": m["role"],
+                "content": m["content"]
+            }
+            for m in st.session_state.messages
+        ]
+
         chat_completion = client.chat.completions.create(
             model=model_option,
-            messages=[
-                {
-                    "role": m["role"],
-                    "content": m["content"]
-                }
-                for m in st.session_state.messages
-            ],
+            messages=messages,
             max_tokens=max_tokens,
+            temperature=temperature,
             stream=True
         )
 
