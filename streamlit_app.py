@@ -80,7 +80,7 @@ models = {
 
 # Sidebar for settings
 with st.sidebar:
-    st.markdown('<p style="color: #111827; font-size: 1.25rem; font-weight: 600;">Model Settings</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 1.25rem; font-weight: 600;">Model Settings</p>', unsafe_allow_html=True)
 
     model_option = st.selectbox(
         "Model",
@@ -120,7 +120,7 @@ with st.sidebar:
     st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
     
     # Display current system prompt preview
-    st.markdown('<p style="color: #111827; font-size: 1rem; font-weight: 600;">Current System Prompt</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size: 1rem; font-weight: 600;">Current System Prompt</p>', unsafe_allow_html=True)
     st.code(st.session_state.system_prompt, language=None)
 
 # System Prompt Editor Dialog
@@ -153,7 +153,7 @@ if st.session_state.show_prompt_editor:
 # Main chat interface
 st.markdown("""
 <h1 style='font-size: 2.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;'>
-    Groq Chat
+    LLM Chat
 </h1>
 """, unsafe_allow_html=True)
 
