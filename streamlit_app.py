@@ -55,9 +55,12 @@ client = Groq(
     api_key=st.secrets["GROQ_API_KEY"],
 )
 
-# Initialize chat history and selected model
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Initialize session state variables
+if "chats" not in st.session_state:
+    st.session_state.chats = {}
+
+if "current_chat_id" not in st.session_state:
+    st.session_state.current_chat_id = None
 
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = None
@@ -67,6 +70,16 @@ if "system_prompt" not in st.session_state:
 
 if "show_prompt_editor" not in st.session_state:
     st.session_state.show_prompt_editor = False
+
+# Create a new chat if none exists
+if not st.session_state.current_chat_id:
+    new_chat_id = str(len(st.session_state.chats))
+    st.session_state.chats[new_chat_id] = {
+        "messages": [],
+        "name": f"Chat {new_chat_id}",
+        "created_at": st.session_state.get("_current_time", "")
+    }
+    st.session_state.current_chat_id = new_chat_id
 
 # Define model details
 models = {
@@ -78,8 +91,37 @@ models = {
     "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
 }
 
-# Sidebar for settings
+# Sidebar for chat management and settings
 with st.sidebar:
+    # Chat Management Section
+    st.markdown('<p style="font-size: 1.25rem; font-weight: 600;">Chat Management</p>', unsafe_allow_html=True)
+    
+    # New Chat button
+    if st.button("➕ New Chat"):
+        new_chat_id = str(len(st.session_state.chats))
+        st.session_state.chats[new_chat_id] = {
+            "messages": [],
+            "name": f"Chat {new_chat_id}",
+            "created_at": st.session_state.get("_current_time", "")
+        }
+        st.session_state.current_chat_id = new_chat_id
+        st.rerun()
+    
+    # Chat History
+    st.markdown('<p style="font-size: 1rem; margin-top: 1rem;">Chat History</p>', unsafe_allow_html=True)
+    for chat_id, chat_data in st.session_state.chats.items():
+        if st.sidebar.button(
+            f"💬 {chat_data['name']}",
+            key=f"chat_{chat_id}",
+            use_container_width=True,
+            type="secondary" if chat_id != st.session_state.current_chat_id else "primary"
+        ):
+            st.session_state.current_chat_id = chat_id
+            st.rerun()
+    
+    st.markdown('<hr style="margin: 1.5rem 0;"/>', unsafe_allow_html=True)
+    
+    # Model Settings Section
     st.markdown('<p style="font-size: 1.25rem; font-weight: 600;">Model Settings</p>', unsafe_allow_html=True)
 
     model_option = st.selectbox(
@@ -158,7 +200,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Display chat messages
-for message in st.session_state.messages:
+current_chat = st.session_state.chats[st.session_state.current_chat_id]
+for message in current_chat["messages"]:
     avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
     with st.chat_message(message["role"], avatar=avatar):
         # Format thinking tags if present
@@ -174,7 +217,8 @@ def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
 
 
 if prompt := st.chat_input("Message Groq..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    current_chat = st.session_state.chats[st.session_state.current_chat_id]
+    current_chat["messages"].append({"role": "user", "content": prompt})
 
     with st.chat_message("user", avatar='👨‍💻'):
         st.markdown(prompt)
@@ -187,7 +231,7 @@ if prompt := st.chat_input("Message Groq..."):
                 "role": m["role"],
                 "content": m["content"]
             }
-            for m in st.session_state.messages
+            for m in current_chat["messages"]
         ]
 
         chat_completion = client.chat.completions.create(
