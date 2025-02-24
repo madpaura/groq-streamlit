@@ -154,7 +154,7 @@ with st.sidebar:
     
     with col2:
         # Reload chats button
-        if st.button("🔄 Reload", use_container_width=True):
+        if st.button("🔄", use_container_width=True):
             st.session_state.chats = load_chats()
             if not st.session_state.chats:
                 new_chat_id = "0"
