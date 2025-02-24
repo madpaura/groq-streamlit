@@ -55,9 +55,51 @@ client = Groq(
     api_key=st.secrets["GROQ_API_KEY"],
 )
 
+import json
+from datetime import datetime
+import os
+
+# Function to get chat label from first message
+def get_chat_label(messages, chat_id):
+    if not messages:
+        return f"New Chat {chat_id}"
+    first_msg = messages[0]
+    if first_msg["role"] == "user":
+        # Truncate long messages
+        label = first_msg["content"][:30]
+        return f"{label}..." if len(first_msg["content"]) > 30 else label
+    return f"New Chat {chat_id}"
+
+# Function to save chats
+def save_chats():
+    chats_dir = "chat_history"
+    os.makedirs(chats_dir, exist_ok=True)
+    
+    chat_data = {
+        chat_id: {
+            "messages": chat["messages"],
+            "name": chat["name"],
+            "created_at": chat["created_at"]
+        }
+        for chat_id, chat in st.session_state.chats.items()
+    }
+    
+    with open(os.path.join(chats_dir, "chats.json"), "w") as f:
+        json.dump(chat_data, f)
+
+# Function to load chats
+def load_chats():
+    chats_dir = "chat_history"
+    chats_file = os.path.join(chats_dir, "chats.json")
+    
+    if os.path.exists(chats_file):
+        with open(chats_file, "r") as f:
+            return json.load(f)
+    return {}
+
 # Initialize session state variables
 if "chats" not in st.session_state:
-    st.session_state.chats = {}
+    st.session_state.chats = load_chats()
 
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = None
@@ -72,12 +114,12 @@ if "show_prompt_editor" not in st.session_state:
     st.session_state.show_prompt_editor = False
 
 # Create a new chat if none exists
-if not st.session_state.current_chat_id:
+if not st.session_state.current_chat_id or not st.session_state.chats:
     new_chat_id = str(len(st.session_state.chats))
     st.session_state.chats[new_chat_id] = {
         "messages": [],
-        "name": f"Chat {new_chat_id}",
-        "created_at": st.session_state.get("_current_time", "")
+        "name": f"New Chat {new_chat_id}",
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     st.session_state.current_chat_id = new_chat_id
 
@@ -96,22 +138,51 @@ with st.sidebar:
     # Chat Management Section
     st.markdown('<p style="font-size: 1.25rem; font-weight: 600;">Chat Management</p>', unsafe_allow_html=True)
     
-    # New Chat button
-    if st.button("➕ New Chat"):
-        new_chat_id = str(len(st.session_state.chats))
-        st.session_state.chats[new_chat_id] = {
-            "messages": [],
-            "name": f"Chat {new_chat_id}",
-            "created_at": st.session_state.get("_current_time", "")
-        }
-        st.session_state.current_chat_id = new_chat_id
-        st.rerun()
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        # New Chat button
+        if st.button("➕ New Chat", use_container_width=True):
+            new_chat_id = str(len(st.session_state.chats))
+            st.session_state.chats[new_chat_id] = {
+                "messages": [],
+                "name": f"New Chat {new_chat_id}",
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            st.session_state.current_chat_id = new_chat_id
+            save_chats()
+            st.rerun()
+    
+    with col2:
+        # Reload chats button
+        if st.button("🔄 Reload", use_container_width=True):
+            st.session_state.chats = load_chats()
+            if not st.session_state.chats:
+                new_chat_id = "0"
+                st.session_state.chats[new_chat_id] = {
+                    "messages": [],
+                    "name": f"New Chat {new_chat_id}",
+                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+            st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
+            st.rerun()
     
     # Chat History
     st.markdown('<p style="font-size: 1rem; margin-top: 1rem;">Chat History</p>', unsafe_allow_html=True)
-    for chat_id, chat_data in st.session_state.chats.items():
+    
+    # Sort chats by creation time (newest first)
+    sorted_chats = sorted(
+        st.session_state.chats.items(),
+        key=lambda x: x[1]["created_at"],
+        reverse=True
+    )
+    
+    for chat_id, chat_data in sorted_chats:
+        # Update chat name based on first message
+        chat_label = get_chat_label(chat_data["messages"], chat_id)
+        
+        # Show chat button with timestamp
         if st.sidebar.button(
-            f"💬 {chat_data['name']}",
+            f"💬 {chat_label}\n📅 {chat_data['created_at']}",
             key=f"chat_{chat_id}",
             use_container_width=True,
             type="secondary" if chat_id != st.session_state.current_chat_id else "primary"
@@ -219,6 +290,10 @@ def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
 if prompt := st.chat_input("Message Groq..."):
     current_chat = st.session_state.chats[st.session_state.current_chat_id]
     current_chat["messages"].append({"role": "user", "content": prompt})
+    # Update chat name based on first message if this is the first message
+    if len(current_chat["messages"]) == 1:
+        current_chat["name"] = get_chat_label(current_chat["messages"], st.session_state.current_chat_id)
+    save_chats()
 
     with st.chat_message("user", avatar='👨‍💻'):
         st.markdown(prompt)
