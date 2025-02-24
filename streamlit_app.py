@@ -180,15 +180,42 @@ with st.sidebar:
         # Update chat name based on first message
         chat_label = get_chat_label(chat_data["messages"], chat_id)
         
-        # Show chat button with timestamp
-        if st.sidebar.button(
-            f"💬 {chat_label}\n📅 {chat_data['created_at']}",
-            key=f"chat_{chat_id}",
-            use_container_width=True,
-            type="secondary" if chat_id != st.session_state.current_chat_id else "primary"
-        ):
-            st.session_state.current_chat_id = chat_id
-            st.rerun()
+        # Create two columns for chat button and delete button
+        col1, col2 = st.sidebar.columns([6, 1])
+        
+        # Show chat button with timestamp in the first (wider) column
+        with col1:
+            if st.button(
+                f"💬 {chat_label}\n📅 {chat_data['created_at']}",
+                key=f"chat_{chat_id}",
+                use_container_width=True,
+                type="secondary" if chat_id != st.session_state.current_chat_id else "primary"
+            ):
+                st.session_state.current_chat_id = chat_id
+                st.rerun()
+        
+        # Show delete button in the second (narrower) column
+        with col2:
+            if st.button(
+                "🗑️",
+                key=f"delete_{chat_id}",
+                use_container_width=True,
+                type="secondary"
+            ):
+                # Don't delete if it's the only chat
+                if len(st.session_state.chats) > 1:
+                    # If deleting current chat, switch to another chat
+                    if chat_id == st.session_state.current_chat_id:
+                        # Find the next available chat_id
+                        remaining_chats = [cid for cid in st.session_state.chats.keys() if cid != chat_id]
+                        st.session_state.current_chat_id = remaining_chats[0]
+                    
+                    # Delete the chat
+                    del st.session_state.chats[chat_id]
+                    save_chats()
+                    st.rerun()
+                else:
+                    st.sidebar.warning("Cannot delete the only chat", icon="⚠️")
     
     st.markdown('<hr style="margin: 1.5rem 0;"/>', unsafe_allow_html=True)
     
@@ -323,10 +350,27 @@ if prompt := st.chat_input("Message Groq..."):
     except Exception as e:
         st.error(e, icon="🚨")
 
+    # Save the response with completion details
+    completion_details = {
+        "model": model_option,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "system_prompt": st.session_state.system_prompt,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
     if isinstance(full_response, str):
-        st.session_state.messages.append(
-            {"role": "assistant", "content": full_response})
+        current_chat["messages"].append({
+            "role": "assistant", 
+            "content": full_response,
+            "completion_details": completion_details
+        })
     else:
         combined_response = "\n".join(str(item) for item in full_response)
-        st.session_state.messages.append(
-            {"role": "assistant", "content": combined_response})
+        current_chat["messages"].append({
+            "role": "assistant", 
+            "content": combined_response,
+            "completion_details": completion_details
+        })
+    
+    save_chats()
