@@ -194,16 +194,11 @@ with st.sidebar:
             # Calculate chat size
             chat_size = get_chat_size_kb(chat_data["messages"])
             
-            # Format the button HTML with styled content
-            button_html = f"""
-            <div style="text-align: left; line-height: 1.5;">
-                <div style="font-size: 1rem; margin-bottom: 2px;">💬 {chat_label}</div>
-                <div style="font-size: 0.75rem; color: #666;">📅 {chat_data['created_at']} • {chat_size:.1f}KB</div>
-            </div>
-            """
+            # Format button text with main label and metadata on separate lines
+            button_text = f"💬 {chat_label}\n📅 {chat_data['created_at']} • {chat_size:.1f}KB"
             
             if st.button(
-                button_html,
+                button_text,
                 key=f"chat_{chat_id}",
                 use_container_width=True,
                 type="secondary" if chat_id != st.session_state.current_chat_id else "primary"
