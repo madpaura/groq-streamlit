@@ -60,6 +60,12 @@ from datetime import datetime
 import os
 
 # Function to get chat label from first message
+def get_chat_size_kb(messages):
+    # Convert messages to string and calculate size
+    import json
+    messages_str = json.dumps(messages)
+    return len(messages_str.encode('utf-8')) / 1024
+
 def get_chat_label(messages, chat_id):
     if not messages:
         return f"New Chat {chat_id}"
@@ -185,8 +191,19 @@ with st.sidebar:
         
         # Show chat button with timestamp in the first (wider) column
         with col1:
+            # Calculate chat size
+            chat_size = get_chat_size_kb(chat_data["messages"])
+            
+            # Format the button HTML with styled content
+            button_html = f"""
+            <div style="text-align: left; line-height: 1.5;">
+                <div style="font-size: 1rem; margin-bottom: 2px;">💬 {chat_label}</div>
+                <div style="font-size: 0.75rem; color: #666;">📅 {chat_data['created_at']} • {chat_size:.1f}KB</div>
+            </div>
+            """
+            
             if st.button(
-                f"💬 {chat_label}\n📅 {chat_data['created_at']}",
+                button_html,
                 key=f"chat_{chat_id}",
                 use_container_width=True,
                 type="secondary" if chat_id != st.session_state.current_chat_id else "primary"
