@@ -254,40 +254,30 @@ with st.sidebar:
         help="Controls response creativity. Lower values are more focused."
     )
 
-    if st.button("Edit System Prompt"):
-        st.session_state.show_prompt_editor = True
-
     st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
     
-    # Display current system prompt preview
-    st.markdown('<p style="font-size: 1rem; font-weight: 600;">Current System Prompt</p>', unsafe_allow_html=True)
-    st.code(st.session_state.system_prompt, language=None)
-
-# System Prompt Editor Dialog
-if st.session_state.show_prompt_editor:
-    dialog = st.container()
-    with dialog:
-        st.markdown('<p style="color: #111827; font-size: 1.25rem; font-weight: 600;">Edit System Prompt</p>', unsafe_allow_html=True)
-        
-        new_system_prompt = st.text_area(
-            "System Prompt",
-            value=st.session_state.system_prompt,
-            height=200,
-            help="Define the AI assistant's behavior and role"
-        )
-        
-        col1, col2 = st.columns(2)
+    # System Prompt Editor in sidebar
+    st.markdown('<p style="font-size: 1rem; font-weight: 600;">System Prompt</p>', unsafe_allow_html=True)
+    
+    # Text area for system prompt
+    new_system_prompt = st.text_area(
+        "",  # Empty label since we have the header above
+        value=st.session_state.system_prompt,
+        height=100,
+        key="system_prompt_editor",
+        help="Define the AI assistant's behavior and role"
+    )
+    
+    # Save button for system prompt
+    if new_system_prompt != st.session_state.system_prompt:
+        col1, col2 = st.columns([1, 1])
         with col1:
-            if st.button("Cancel"):
-                st.session_state.show_prompt_editor = False
+            if st.button("Save Changes", type="primary", use_container_width=True):
+                st.session_state.system_prompt = new_system_prompt
                 st.rerun()
-        
         with col2:
-            if st.button("Save", type="primary"):
-                if new_system_prompt != st.session_state.system_prompt:
-                    st.session_state.system_prompt = new_system_prompt
-                    st.session_state.messages = []
-                st.session_state.show_prompt_editor = False
+            if st.button("Reset", type="secondary", use_container_width=True):
+                st.session_state.system_prompt = "You are a helpful AI assistant."
                 st.rerun()
 
 # Main chat interface
