@@ -121,13 +121,23 @@ if "show_prompt_editor" not in st.session_state:
 
 # Create a new chat if none exists
 if not st.session_state.current_chat_id or not st.session_state.chats:
-    new_chat_id = str(len(st.session_state.chats))
+    # Generate a unique chat ID that doesn't conflict with existing IDs
+    existing_ids = set(st.session_state.chats.keys())
+    new_chat_id = "0"
+    
+    # Find the first available ID that doesn't exist
+    i = 0
+    while new_chat_id in existing_ids:
+        i += 1
+        new_chat_id = str(i)
+    
     st.session_state.chats[new_chat_id] = {
         "messages": [],
         "name": f"New Chat {new_chat_id}",
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     st.session_state.current_chat_id = new_chat_id
+    save_chats()
 
 # Define model details
 models = {
@@ -148,7 +158,16 @@ with st.sidebar:
     with col1:
         # New Chat button
         if st.button("➕ New Chat", use_container_width=True):
-            new_chat_id = str(len(st.session_state.chats))
+            # Generate a unique chat ID that doesn't conflict with existing IDs
+            existing_ids = set(st.session_state.chats.keys())
+            new_chat_id = "0"
+            
+            # Find the first available ID that doesn't exist
+            i = 0
+            while new_chat_id in existing_ids:
+                i += 1
+                new_chat_id = str(i)
+            
             st.session_state.chats[new_chat_id] = {
                 "messages": [],
                 "name": f"New Chat {new_chat_id}",
@@ -163,12 +182,22 @@ with st.sidebar:
         if st.button("🔄", use_container_width=True):
             st.session_state.chats = load_chats()
             if not st.session_state.chats:
+                # Generate a unique chat ID that doesn't conflict with existing IDs
+                existing_ids = set(st.session_state.chats.keys())
                 new_chat_id = "0"
+                
+                # Find the first available ID that doesn't exist
+                i = 0
+                while new_chat_id in existing_ids:
+                    i += 1
+                    new_chat_id = str(i)
+                
                 st.session_state.chats[new_chat_id] = {
                     "messages": [],
                     "name": f"New Chat {new_chat_id}",
                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
+                save_chats()
             st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
             st.rerun()
     
@@ -273,11 +302,12 @@ with st.sidebar:
     
     # Text area for system prompt
     new_system_prompt = st.text_area(
-        "",  # Empty label since we have the header above
+        "System Prompt",  
         value=st.session_state.system_prompt,
         height=100,
         key="system_prompt_editor",
-        help="Define the AI assistant's behavior and role"
+        help="Define the AI assistant's behavior and role",
+        label_visibility="collapsed"  
     )
     
     # Save button for system prompt
