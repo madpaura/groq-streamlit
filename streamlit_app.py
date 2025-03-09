@@ -119,17 +119,18 @@ if "system_prompt" not in st.session_state:
 if "show_prompt_editor" not in st.session_state:
     st.session_state.show_prompt_editor = False
 
-# Create a new chat if none exists
-if not st.session_state.current_chat_id or not st.session_state.chats:
-    # Generate a unique chat ID that doesn't conflict with existing IDs
-    existing_ids = set(st.session_state.chats.keys())
+if "show_delete_confirmation" not in st.session_state:
+    st.session_state.show_delete_confirmation = False
+
+# Only set the current chat ID if there are existing chats but none is selected
+if st.session_state.chats and not st.session_state.current_chat_id:
+    # Select the first available chat
+    st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
+
+# Create a new chat only if no chats exist at all (first run of the app)
+if not st.session_state.chats:
+    # Generate a unique chat ID
     new_chat_id = "0"
-    
-    # Find the first available ID that doesn't exist
-    i = 0
-    while new_chat_id in existing_ids:
-        i += 1
-        new_chat_id = str(i)
     
     st.session_state.chats[new_chat_id] = {
         "messages": [],
@@ -141,12 +142,13 @@ if not st.session_state.current_chat_id or not st.session_state.chats:
 
 # Define model details
 models = {
+    "qwen-2.5-32b": {"name": "qwen-2.5-32b", "tokens": 32768, "developer": "Qwen"},
+    "qwen-2.5-coder-32b": {"name": "qwen-2.5-coder-32b", "tokens": 32768, "developer": "Qwen"},
+    "qwen-qwq-32b": {"name": "qwen-qwq-32b", "tokens": 32768, "developer": "Qwen"},
     "deepseek-r1-distill-llama-70b": {"name": "deepseek-r1-distill-llama-70b", "tokens": 32768, "developer": "deepseek"},
     "gemma2-9b-it": {"name": "gemma2-9b-it", "tokens": 8192, "developer": "Google"},
     "llama-3.3-70b-versatile": {"name": "llama-3.3-70b-versatile", "tokens": 8192, "developer": "Meta"},
     "llama-3.3-70b-specdec": {"name": "llama-3.3-70b-specdec", "tokens": 8192, "developer": "Meta"},
-    "llama-3.1-8b-instant": {"name": "llama-3.1-8b-instant", "tokens": 8192, "developer": "Meta"},
-    "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
 }
 
 # Sidebar for chat management and settings
@@ -154,10 +156,12 @@ with st.sidebar:
     # Chat Management Section
     st.markdown('<p style="font-size: 1.25rem; font-weight: 600;">Chat Management</p>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns([3, 1])
+    # Create three columns for the buttons
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
-        # New Chat button
-        if st.button("➕ New Chat", use_container_width=True):
+        # New Chat button (just icon)
+        if st.button("➕", use_container_width=True, help="New Chat"):
             # Generate a unique chat ID that doesn't conflict with existing IDs
             existing_ids = set(st.session_state.chats.keys())
             new_chat_id = "0"
@@ -178,8 +182,8 @@ with st.sidebar:
             st.rerun()
     
     with col2:
-        # Reload chats button
-        if st.button("🔄", use_container_width=True):
+        # Reload chats button (just icon)
+        if st.button("🔄", use_container_width=True, help="Refresh Chats"):
             st.session_state.chats = load_chats()
             if not st.session_state.chats:
                 # Generate a unique chat ID that doesn't conflict with existing IDs
@@ -200,6 +204,38 @@ with st.sidebar:
                 save_chats()
             st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
             st.rerun()
+    
+    with col3:
+        # Delete All Chats button (just icon)
+        if st.button("🗑️", use_container_width=True, help="Delete All Chats"):
+            # Set a session state flag to show the confirmation dialog
+            st.session_state.show_delete_confirmation = True
+            st.rerun()
+    
+    # Handle delete confirmation outside of columns
+    if st.session_state.get("show_delete_confirmation", False):
+        st.warning("Are you sure you want to delete all chats? This cannot be undone.", icon="⚠️")
+        confirm_col1, confirm_col2 = st.columns(2)
+        with confirm_col1:
+            if st.button("Yes, Delete All", key="confirm_delete_all", type="primary", use_container_width=True):
+                # Create a new chat to replace the deleted ones
+                new_chat_id = "0"
+                st.session_state.chats = {
+                    new_chat_id: {
+                        "messages": [],
+                        "name": f"New Chat {new_chat_id}",
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                }
+                st.session_state.current_chat_id = new_chat_id
+                save_chats()
+                st.session_state.show_delete_confirmation = False
+                st.success("All chats have been deleted.")
+                st.rerun()
+        with confirm_col2:
+            if st.button("Cancel", key="cancel_delete_all", type="secondary", use_container_width=True):
+                st.session_state.show_delete_confirmation = False
+                st.rerun()
     
     # Chat History
     st.markdown('<p style="font-size: 1rem; margin-top: 1rem;">Chat History</p>', unsafe_allow_html=True)
